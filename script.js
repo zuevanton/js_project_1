@@ -13,64 +13,73 @@ const validatePromptIsNum = (question) => {
   return parseFloat(result)
 } 
 
+const validatePromptIsText = function(question){
+  let answer;
+  do {
+    answer = prompt(question);
+  }
+  while(!isNaN(+answer));
+  return answer;
+};
+
 const appData = {
   title: '',
-  screens: '',
+  screens: [],
   screenPrice: 0,
   rollback: 10,
   adaptive: true,
   allServicePrices: 0, 
   servicePercentPrice: 0, 
   fullPrice: 0, 
-  service1: '',
-  service2: '',
+  services: {},
 
   start(){
     this.asking()
-    this.allServicePrices = this.getAllServicePrices()
-    this.fullPrice = this.getFullPrice()
-    this.servicePercentPrice = this.getServicePercentPrices()
-    this.title = this.getTitle()
+    this.addPrices()
+    this.getFullPrice()
+    this.getServicePercentPrices()
+    this.getTitle()
     
     this.logger()
   },
 
   asking(){
-    this.title = prompt('как называется ваш проект?')
-    this.screens = prompt('Какие типы экранов нужно разработать?')
-    this.screenPrice = validatePromptIsNum('Сколько будет стоить данная работа?')
+    this.title = validatePromptIsText('как называется ваш проект?')
     this.adaptive = confirm('Нужен ли адаптив на сайте?')
-  },
 
+    for (let i = 0; i < 2; i++){
+      let name = validatePromptIsText('Какие типы экранов нужно разработать?')
+      let price = +validatePromptIsNum('Сколько будет стоить данная работа?')
+      this.screens.push({id: i, name, price})
+    }
+
+    for (let i = 0; i < 2; i++){
+      let name = validatePromptIsText('Какой дополнительный тип услуги нужен?')
+      let price = validatePromptIsNum('сколько это будет стоить?')
+      this.services[name + `-${i+1}`] = +price
+    }
+  },
+  addPrices(){
+    this.screenPrice = this.screens.reduce((sum, cur) => {
+      return sum + cur.price
+    }, 0)
+    
+    for(let key in this.services){
+      this.allServicePrices += this.services[key]
+    }
+  },
   logger(){
     console.log(this.fullPrice)
     console.log(this.servicePercentPrice)
-
-    for(let key in this){
-      console.log(key)
-    }
-  },
-
-  getAllServicePrices(){
-    let sum = 0
-
-    for (let i = 0; i < 2; i++){
-      if (i == 0){
-        this.service1 = prompt('Какой дополнительный тип услуги нужен?')
-      } else if (i == 1) {
-        this.service2 = prompt('Какой дополнительный тип услуги нужен?')
-      }
-      sum += validatePromptIsNum('сколько это будет стоить?')
-    }
-    return sum
+    console.log(this.screens)
   },
 
   getFullPrice() {
-    return +this.screenPrice + this.allServicePrices
+    this.fullPrice = +this.screenPrice + this.allServicePrices
   },
 
   getServicePercentPrices(){
-    return Math.ceil(this.fullPrice - this.fullPrice * (this.rollback/100))
+    this.servicePercentPrice =  Math.ceil(this.fullPrice - this.fullPrice * (this.rollback/100))
   },
 
   getRollbackMessage(){
@@ -86,7 +95,7 @@ const appData = {
   },
 
   getTitle() {
-    return this.title.trim()[0].toUpperCase() + this.title.trim().slice(1).toLowerCase()
+    this.title = this.title.trim()[0].toUpperCase() + this.title.trim().slice(1).toLowerCase()
   }
 }
 
